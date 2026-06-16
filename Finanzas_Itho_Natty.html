@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Finanzas Itho & Natty Cloud v6.5</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --bg-principal: #0b0f19;
+            --bg-tarjeta: #161b26;
+            --border-color: #262f40;
+            --texto-principal: #f0f4f8;
+            --texto-secundario: #94a3b8;
+            --neon-azul: #38bdf8;
+            --neon-verde: #4ade80;
+            --neon-rojo: #f87171;
+            --neon-naranja: #fb923c;
+            --neon-morado: #a855f7;
+        }
+
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-principal); color: var(--texto-principal); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+        .app-container { max-width: 750px; width: 100%; background-color: var(--bg-tarjeta); border: 1px solid var(--border-color); border-radius: 24px; padding: 25px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); margin-top: 40px; }
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { font-size: 26px; margin: 0; background: linear-gradient(to right, var(--neon-azul), var(--neon-verde)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+        header p { color: var(--texto-secundario); font-size: 13px; margin: 5px 0 0 0; }
+        h2 { font-size: 18px; color: var(--neon-azul); margin-top: 30px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .badge-historico { background-color: var(--neon-naranja); color: #0b0f19; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: bold; margin-left: auto; }
+        
+        .btn-toggle-historial { position: fixed; top: 15px; left: 15px; background: linear-gradient(135deg, #0284c7, #0369a1); border: none; color: white; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 18px; z-index: 999; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); display: flex; align-items: center; gap: 8px; }
+        .btn-toggle-historial span { font-size: 13px; font-weight: 600; font-family: 'Segoe UI', sans-serif; }
+
+        .sidebar-historial { position: fixed; top: 0; left: -340px; width: 300px; height: 100%; background-color: #0e1322; border-right: 1px solid var(--border-color); box-shadow: 5px 0 30px rgba(0,0,0,0.7); z-index: 1000; transition: left 0.3s ease; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .sidebar-historial.open { left: 0; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .sidebar-header h3 { margin: 0; font-size: 16px; color: var(--neon-azul); display: flex; align-items: center; gap: 8px; }
+        .btn-close-sidebar { background: none; border: none; color: var(--texto-secundario); font-size: 20px; cursor: pointer; }
+        .btn-close-sidebar:hover { color: var(--neon-rojo); }
+
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; display: none; }
+        .sidebar-overlay.show { display: block; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 16px; padding: 15px; text-align: center; }
+        .card span { display: block; font-size: 12px; color: var(--texto-secundario); text-transform: uppercase; }
+        .card .monto { font-size: 22px; font-weight: 700; margin-top: 8px; }
+        .c-casa .monto { color: var(--neon-azul); }
+        .c-gastado .monto { color: var(--neon-rojo); }
+        .c-disponible .monto { color: var(--neon-verde); }
+
+        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .input-wrapper { display: flex; flex-direction: column; }
+        .input-wrapper label { font-size: 12px; color: var(--texto-secundario); margin-bottom: 6px; }
+        input, select { background-color: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; color: white; font-size: 14px; }
+        input:focus, select:focus { border-color: var(--neon-azul); outline: none; }
+        
+        .file-upload { border: 1px dashed var(--border-color); padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; color: var(--texto-secundario); cursor: pointer; background: rgba(0,0,0,0.1); }
+        .file-upload:hover { border-color: var(--neon-azul); color: white; }
+
+        .btn { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--border-color); color: white; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+        .btn-primary { background: linear-gradient(135deg, #0284c7, #0369a1); border: none; }
+        .btn-success { background: linear-gradient(135deg, #16a34a, #15803d); border: none; }
+        .btn-naranja { background: linear-gradient(135deg, #f97316, #ea580c); border: none; }
+        .btn-morado { background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; margin-bottom: 15px;}
+        
+        .search-container { position: relative; margin-bottom: 15px; }
+        .search-container input { width: 100%; padding-left: 40px; box-sizing: border-box; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--texto-secundario); }
+
+        .lista-gastos { max-height: 320px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 14px; background-color: rgba(0, 0, 0, 0.15); margin-bottom: 15px; }
+        .gasto-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+        .gasto-info { flex-grow: 1; min-width: 0; padding-right: 10px; }
+        .gasto-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gasto-cat { font-size: 11px; color: var(--texto-secundario); background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block; }
+        .gasto-acciones { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .gasto-monto { font-weight: 700; color: var(--neon-rojo); font-size: 14px; }
+        
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; }
+        .btn-edit { color: var(--neon-azul); }
+        .btn-view-img { color: var(--neon-verde); }
+        .btn-add-img { color: var(--neon-naranja); }
+        .btn-delete { color: rgba(248, 113, 113, 0.6); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1001; }
+        .modal-content { max-width: 90%; max-height: 85%; background: var(--bg-tarjeta); padding: 20px; border-radius: 15px; border: 1px solid var(--border-color); text-align: center; overflow-y: auto; }
+        .modal-content img { max-width: 100%; max-height: 65vh; border-radius: 10px; }
+        .modal-close { margin-top: 15px; padding: 10px 20px; background: var(--border-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+
+        .historial-meses { display: flex; flex-direction: column; gap: 10px; }
+        .historial-item { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; align-items: flex-start; }
+        .historial-meta { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .historial-mes { font-weight: bold; color: var(--neon-azul); }
+        .historial-acciones { display: flex; gap: 8px; width: 100%; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; }
+        .btn-load-history { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--neon-azul); padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-delete-history { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: var(--neon-rojo); padding: 5px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        
+        .fijo-monto { color: var(--neon-morado) !important; }
+        .seccion-fijos { background: rgba(168, 85, 247, 0.03); border: 1px dashed rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 15px; margin-top: 25px; }
+        .seccion-fijos h3 { margin: 0 0 15px 0; font-size: 15px; color: var(--neon-morado); display: flex; align-items: center; gap: 6px; }
+
+        .selector-fijos-lista { text-align: left; max-height: 250px; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(0,0,0,0.2); }
+        .fijo-select-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+        .fijo-select-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--neon-morado); cursor: pointer; }
+        .fijo-select-label { flex-grow: 1; font-size: 14px; }
+
+        .centro-notif-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 7, 12, 0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .centro-notif-box { background-color: #111622; border: 1px solid var(--border-color); border-radius: 20px; max-width: 340px; width: 90%; padding: 25px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); animation: popupEntrada 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .centro-notif-box i { font-size: 40px; margin-bottom: 15px; display: block; }
+        .notif-alerta i { color: var(--neon-naranja); }
+        .notif-exito i { color: var(--neon-verde); }
+        .centro-notif-box h4 { margin: 0 0 10px 0; font-size: 18px; font-weight: 600; }
+        .centro-notif-box p { margin: 0 0 20px 0; font-size: 14px; color: var(--texto-secundario); line-height: 1.4; }
+        .centro-notif-btns { display: flex; gap: 10px; justify-content: center; }
+        .centro-notif-btns .btn-notif { padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; min-width: 80px; }
+        .btn-notif-cancel { background: #262f40; color: var(--texto-principal); }
+        .btn-notif-confirm { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; }
+        .btn-notif-ok { background: linear-gradient(135deg, #10b981, #047857); color: white; width: 100%; }
+
+        @keyframes popupEntrada {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="btn-toggle-historial" onclick="toggleSidebar(true)">
+    <i class="fa-solid fa-bars"></i> <span>Historial</span>
+</button>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+<div class="sidebar-historial" id="sidebarHistorial">
+    <div class="sidebar-header">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Ciclos en la Nube</h3>
+        <button class="btn-close-sidebar" onclick="toggleSidebar(false)"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="historial-meses" id="contenedorHistorial"></div>
+</div>
+
+<div class="centro-notif-overlay" id="centroNotifOverlay">
+    <div class="centro-notif-box notif-alerta" id="centroNotifBox">
+        <i id="notifIcono" class="fa-solid fa-triangle-exclamation"></i>
+        <h4 id="notifTitulo">¿Confirmar Acción?</h4>
+        <p id="notifMensaje">¿Estás seguro de realizar este cambio?</p>
+        <div class="centro-notif-btns" id="notifContenedorBotones"></div>
+    </div>
+</div>
+
+<div class="app-container">
+    <header>
+        <h1>⚡ ITHO & NATTY SYSTEM</h1>
+        <p>Sincronización en la Nube Firebase en Tiempo Real</p>
+    </header>
+
+    <h2>
+        <i class="fa-solid fa-wallet"></i> 1. Inyección de Capital
+        <span id="badgeModo" class="badge-historico" style="display:none;">MODO VISUALIZACIÓN</span>
+    </h2>
+    <div class="form-group">
+        <div class="input-wrapper">
+            <label>Mes de Operación</label>
+            <input type="month" id="mes">
+        </div>
+        <div class="input-wrapper">
+            <label>🧱 Fondos Retenidos Casa</label>
+            <input type="text" id="ahorroCasa" value="0" oninput="formatearInputMoneda(this)">
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="input-wrapper">
+            <label>💵 Sueldo Itho</label>
+            <input type="text" id="sueldoItho" value="0" oninput="formatearInputMoneda(this)">
+        </div>
+        <div class="input-wrapper">
+            <label>💵 Sueldo Natty</label>
+            <input type="text" id="sueldoNatty" value="0" oninput="formatearInputMoneda(this)">
+        </div>
+    </div>
+    <div class="form-group">
+        <button class="btn btn-primary" id="btnSincronizar" onclick="inicializarMes()"><i class="fa-solid fa-cloud-arrow-up"></i> Conectar / Sincronizar Mes</button>
+        <div id="bloqueBotonesHistoricos" style="display:none; width:100%; display:flex; gap:10px;">
+            <button class="btn btn-naranja" id="btnHabilitarEdicion" onclick="permitirEditarHistorico()"><i class="fa-solid fa-lock-open"></i> Habilitar Edición</button>
+            <button class="btn" id="btnRegresarActual" style="border-color: var(--neon-verde); color: var(--neon-verde);" onclick="salirModoHistorico()"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+        </div>
+    </div>
+
+    <div class="seccion-fijos" id="seccionFijosMaestros">
+        <h3><i class="fa-solid fa-layer-group"></i> Configurar Gastos Fijos Globales</h3>
+        <div class="form-group" style="grid-template-columns: 2fr 1fr;">
+            <input type="text" id="fDesc" placeholder="Ej: Crédito Auto, Netflix...">
+            <input type="text" id="fMonto" value="0" oninput="formatearInputMoneda(this)">
+        </div>
+        <div class="form-group" style="grid-template-columns: 2fr 1fr; margin-bottom: 10px;">
+            <select id="fCat">
+                <option value="Gastos Comunes">Gastos Comunes</option>
+                <option value="Tarjetas">Tarjetas</option>
+                <option value="Gustos">Gustos</option>
+                <option value="Otros">Otros</option>
+            </select>
+            <button class="btn" id="btnGuardarFijo" onclick="guardarGastoFijo()" style="background: rgba(168, 85, 247, 0.15); border-color: var(--neon-morado); color: var(--neon-morado);"><i class="fa-solid fa-floppy-disk"></i> Guardar Fijo</button>
+        </div>
+        <div class="lista-gastos" id="contenedorFijos" style="max-height: 140px;"></div>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        <h2><i class="fa-solid fa-chart-simple"></i> 2. Estado del Mes</h2>
+        <div class="dashboard-grid">
+            <div class="card c-ingresos"><span>Ingresos Combinados</span><div class="monto" id="dIngresos">$0</div></div>
+            <div class="card c-casa"><span>Apartado Casa</span><div class="monto" id="dAhorro">$0</div></div>
+            <div class="card c-gastado"><span>Total Egresos</span><div class="monto" id="dGastado">$0</div></div>
+            <div class="card c-disponible"><span>Capital Disponible</span><div class="monto" id="dDisponible">$0</div></div>
+        </div>
+
+        <button class="btn btn-morado" id="btnCargarFijosMasivo" onclick="abrirSelectorGastosFijos()"><i class="fa-solid fa-bolt"></i> ⚡ Cargar Gastos Fijos al Mes Activo</button>
+
+        <div id="bloqueAgregarGasto">
+            <h2><i class="fa-solid fa-circle-plus"></i> 3. Registrar Transacción</h2>
+            <div class="form-group" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-wrapper">
+                    <label>Concepto / Detalle</label>
+                    <input type="text" id="gDesc" placeholder="Ej: Tarjeta Visa...">
+                </div>
+                <div class="input-wrapper">
+                    <label>Monto ($)</label>
+                    <input type="text" id="gMonto" value="0" oninput="formatearInputMoneda(this)">
+                </div>
+            </div>
+            <div class="form-group" style="grid-template-columns: 1fr 1fr; margin-bottom: 15px;">
+                <div class="input-wrapper">
+                    <label>Categoría</label>
+                    <select id="gCat">
+                        <option value="Tarjetas">Tarjetas</option>
+                        <option value="Gastos Comunes">Gastos Comunes</option>
+                        <option value="Gustos">Gustos</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="input-wrapper">
+                    <label>📂 Comprobante (Opcional)</label>
+                    <label class="file-upload">
+                        <i class="fa-solid fa-camera"></i> <span id="fileName">Adjuntar Foto</span>
+                        <input type="file" id="gImg" accept="image/*" style="display:none;" onchange="procesarFoto(this)">
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-success" id="btnAgregarGastoAction" onclick="ejecutarGasto()"><i class="fa-solid fa-plus"></i> Agregar Gasto</button>
+        </div>
+
+        <h2><i class="fa-solid fa-list-check"></i> <span id="tituloLibro">4. Libro de Egresos</span></h2>
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="buscador" placeholder="Buscar gasto..." oninput="filtrarGastos()">
+        </div>
+
+        <div class="lista-gastos" id="contenedorGastos"></div>
+
+        <button class="btn btn-primary" id="btnArchivar" style="margin-top: 25px; display:none;" onclick="cerrarYGuardarMes()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios del Mes</button>
+    </div>
+</div>
+
+<!-- MODAL PARA SELECCIONAR GASTOS FIJOS A CARGAR -->
+<div id="fijosSelectorModal" class="modal">
+    <div class="modal-content" style="width: 90%; max-width: 400px;">
+        <h3 style="color: var(--neon-morado); margin-top: 0;"><i class="fa-solid fa-list-check"></i> Seleccionar Fijos a Cargar</h3>
+        <p style="font-size: 13px; color: var(--texto-secundario)">Marca únicamente los gastos que deseas inyectar este mes:</p>
+        <div class="selector-fijos-lista" id="listaFijosParaSeleccionar"></div>
+        <button class="btn btn-success" onclick="inyectarFijosSeleccionados()"><i class="fa-solid fa-bolt"></i> Inyectar Seleccionados</button>
+        <button class="modal-close" onclick="cerrarSelectorFijos()">Cancelar</button>
+    </div>
+</div>
+
+<!-- VISOR DE IMÁGENES -->
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <img id="modalImg" src="" alt="Comprobante"><br>
+        <button class="modal-close" onclick="cerrarModal()">Cerrar Visor</button>
+    </div>
+</div>
+
+<!-- INPUT INVISIBLE PARA ADJUNTAR BOLETA DESDE LA LISTA -->
+<input type="file" id="inputFotoDirecta" accept="image/*" style="display:none;" onchange="procesarFotoDirectaLista(this)">
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCRrv4Z75sr1q5cpQpb8mGsOZtQ-H8saaw",
+        authDomain: "finanzas-itho-y-natty.firebaseapp.com",
+        projectId: "finanzas-itho-y-natty",
+        storageBucket: "finanzas-itho-y-natty.firebasestorage.app",
+        messagingSenderId: "142462984920",
+        appId: "1:142462984920:web:fd07177ef6fdf898cb6dad"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.inicializarMes = inicializarMes;
+    window.ejecutarGasto = ejecutarGasto;
+    window.editarGasto = editarGasto;
+    window.eliminarGasto = pedirConfirmacionEliminarGasto;
+    window.verComprobante = verComprobante;
+    window.cerrarYGuardarMes = cerrarYGuardarMes;
+    window.cargarMesPasado = cargarMesPasado;
+    window.permitirEditarHistorico = permitirEditarHistorico;
+    window.salirModoHistorico = salirModoHistorico;
+    window.eliminarMesCompleto = pedirConfirmacionEliminarMes;
+    window.toggleSidebar = toggleSidebar;
+    
+    window.guardarGastoFijo = guardarGastoFijo;
+    window.eliminarGastoFijo = pedirConfirmacionEliminarFijo;
+    window.editarGastoFijo = editarGastoFijo;
+    
+    window.abrirSelectorGastosFijos = abrirSelectorGastosFijos;
+    window.cerrarSelectorFijos = cerrarSelectorFijos;
+    window.inyectarFijosSeleccionados = inyectarFijosSeleccionados;
+    window.solicitarFotoDirecta = solicitarFotoDirecta;
+
+    document.getElementById('mes').value = new Date().toISOString().slice(0, 7);
+
+    let mesActivo = { mes: "", ingresos: 0, ahorroCasa: 0, totalGastado: 0, disponible: 0, gastos: [], sueldoItho: 0, sueldoNatty: 0 };
+    let listaGastosFijosGlobales = [];
+    let idFijoEditando = null;
+    let esModoHistorico = false;
+    let base64GastoImg = "";
+    let idGastoEditando = null;
+    let idGastoParaFotoDirecta = null;
+
+    function mostrarMensajeCentro(tipo, titulo, mensaje, callbackConfirmar = null) {
+        const overlay = document.getElementById('centroNotifOverlay');
+        const box = document.getElementById('centroNotifBox');
+        const icono = document.getElementById('notifIcono');
+        const txtTitulo = document.getElementById('notifTitulo');
+        const txtMensaje = document.getElementById('notifMensaje');
+        const btnsContenedor = document.getElementById('notifContenedorBotones');
+
+        box.className = "centro-notif-box " + (tipo === 'exito' ? 'notif-exito' : 'notif-alerta');
+        icono.className = "fa-solid " + (tipo === 'exito' ? 'fa-circle-check' : 'fa-triangle-exclamation');
+        
+        txtTitulo.innerText = titulo;
+        txtMensaje.innerText = mensaje;
+        btnsContenedor.innerHTML = "";
+
+        if (callbackConfirmar) {
+            const btnNo = document.createElement('button');
+            btnNo.className = "btn-notif btn-notif-cancel";
+            btnNo.innerText = "Cancelar";
+            btnNo.onclick = () => { overlay.style.display = 'none'; };
+
+            const btnSi = document.createElement('button');
+            btnSi.className = "btn-notif btn-notif-confirm";
+            btnSi.innerText = "Confirmar";
+            btnSi.onclick = () => {
+                overlay.style.display = 'none';
+                callbackConfirmar();
+            };
+
+            btnsContenedor.appendChild(btnNo);
+            btnsContenedor.appendChild(btnSi);
+        } else {
+            const btnOk = document.createElement('button');
+            btnOk.className = "btn-notif btn-notif-ok";
+            btnOk.innerText = "Entendido";
+            btnOk.onclick = () => { overlay.style.display = 'none'; };
+            btnsContenedor.appendChild(btnOk);
+        }
+
+        overlay.style.display = 'flex';
+    }
+
+    function toggleSidebar(open) {
+        const sidebar = document.getElementById('sidebarHistorial');
+        const overlay = document.getElementById('sidebarOverlay');
+        if(open) {
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+        } else {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+    }
+
+    async function inicializarMes() {
+        const mesID = document.getElementById('mes').value;
+        const sItho = limpiarFormateo(document.getElementById('sueldoItho').value);
+        const sNatty = limpiarFormateo(document.getElementById('sueldoNatty').value);
+        const casa = limpiarFormateo(document.getElementById('ahorroCasa').value);
+
+        const docRef = doc(db, "finanzas_meses", mesID);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            mesActivo = docSnap.data();
+            document.getElementById('sueldoItho').value = mesActivo.sueldoItho.toLocaleString('de-DE');
+            document.getElementById('sueldoNatty').value = mesActivo.sueldoNatty.toLocaleString('de-DE');
+            document.getElementById('ahorroCasa').value = mesActivo.ahorroCasa.toLocaleString('de-DE');
+        } else {
+            if((sItho + sNatty) === 0) { mostrarMensajeCentro('alerta', 'Faltan Datos', 'Ingrese sueldos para iniciar un mes nuevo.'); return; }
+            mesActivo = {
+                mes: mesID,
+                sueldoItho: sItho,
+                sueldoNatty: sNatty,
+                ingresos: sItho + sNatty,
+                ahorroCasa: casa,
+                totalGastado: 0,
+                disponible: (sItho + sNatty) - casa,
+                gastos: []
+            };
+        }
+
+        bloquearControlesUI(false);
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('btnArchivar').style.display = 'block';
+        refrescarDashboard();
+        renderizarGastos();
+    }
+
+    /* MÓDULO GASTOS FIJOS SELECTIVOS */
+    async function guardarGastoFijo() {
+        let desc = document.getElementById('fDesc').value.trim();
+        const monto = limpiarFormateo(document.getElementById('fMonto').value);
+        const cat = document.getElementById('fCat').value;
+
+        if(!desc || monto <= 0) { mostrarMensajeCentro('alerta', 'Error', 'Ingrese descripción y monto válidos para el gasto fijo.'); return; }
+        desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+        if(idFijoEditando !== null) {
+            listaGastosFijosGlobales = listaGastosFijosGlobales.filter(f => f.id !== idFijoEditando);
+            idFijoEditando = null;
+            document.getElementById('btnGuardarFijo').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Fijo`;
+        }
+
+        const nuevoFijo = { id: Date.now().toString(), desc, monto, cat };
+        listaGastosFijosGlobales.unshift(nuevoFijo);
+
+        await setDoc(doc(db, "configuracion", "gastos_fijos"), { lista: listaGastosFijosGlobales });
+        
+        document.getElementById('fDesc').value = "";
+        document.getElementById('fMonto').value = "0";
+        
+        renderizarGastosFijos();
+        mostrarMensajeCentro('exito', 'Guardado', 'Gasto fijo maestro registrado correctamente.');
+    }
+
+    async function cargarGastosFijosGlobales() {
+        try {
+            const docSnap = await getDoc(doc(db, "configuracion", "gastos_fijos"));
+            if(docSnap.exists()) {
+                listaGastosFijosGlobales = docSnap.data().lista || [];
+            }
+            renderizarGastosFijos();
+        } catch(e) { console.error("Error cargando fijos: ", e); }
+    }
+
+    function renderizarGastosFijos() {
+        const contenedor = document.getElementById('contenedorFijos');
+        contenedor.innerHTML = "";
+        if(listaGastosFijosGlobales.length === 0) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--texto-secundario); font-size:12px; margin:10px 0;">No hay gastos fijos creados.</p>`;
+            return;
+        }
+        listaGastosFijosGlobales.forEach(f => {
+            contenedor.innerHTML += `
+                <div class="gasto-row" style="padding: 8px 10px;">
+                    <div class="gasto-info">
+                        <div class="gasto-title" style="font-size:13px;">📌 ${f.desc}</div>
+                        <div class="gasto-cat" style="font-size:10px;">${f.cat}</div>
+                    </div>
+                    <div class="gasto-acciones">
+                        <span class="gasto-monto fijo-monto" style="font-size:13px;">$${f.monto.toLocaleString('de-DE')}</span>
+                        <button class="btn-icon btn-edit" onclick="editarGastoFijo('${f.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-icon btn-delete" onclick="eliminarGastoFijo('${f.id}')"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function editarGastoFijo(id) {
+        const f = listaGastosFijosGlobales.find(item => item.id === id);
+        if(!f) return;
+        document.getElementById('fDesc').value = f.desc;
+        document.getElementById('fMonto').value = f.monto.toLocaleString('de-DE');
+        document.getElementById('fCat').value = f.cat;
+        idFijoEditando = id;
+        document.getElementById('btnGuardarFijo').innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Actualizar`;
+    }
+
+    function pedirConfirmacionEliminarFijo(id) {
+        mostrarMensajeCentro('alerta', '¿Eliminar Fijo Maestro?', 'Este gasto ya no aparecerá en el selector de los siguientes meses.', async () => {
+            listaGastosFijosGlobales = listaGastosFijosGlobales.filter(item => item.id !== id);
+            await setDoc(doc(db, "configuracion", "gastos_fijos"), { lista: listaGastosFijosGlobales });
+            renderizarGastosFijos();
+            mostrarMensajeCentro('exito', 'Eliminado', 'Gasto fijo maestro removido.');
+        });
+    }
+
+    // ABRE EL NUEVO POPUP DE SELECCIÓN SELECTIVA
+    function abrirSelectorGastosFijos() {
+        if(listaGastosFijosGlobales.length === 0) { mostrarMensajeCentro('alerta', 'Aviso', 'No tienes gastos fijos globales configurados.'); return; }
+        
+        const contenedorPopup = document.getElementById('listaFijosParaSeleccionar');
+        contenedorPopup.innerHTML = "";
+
+        listaGastosFijosGlobales.forEach(f => {
+            contenedorPopup.innerHTML += `
+                <label class="fijo-select-row">
+                    <input type="checkbox" name="fijosSeleccionados" value="${f.id}" checked>
+                    <div class="fijo-select-label">
+                        <div style="font-weight:600; color:white;">${f.desc}</div>
+                        <div style="font-size:11px; color:var(--texto-secundario);">$${f.monto.toLocaleString('de-DE')} (${f.cat})</div>
+                    </div>
+                </label>
+            `;
+        });
+
+        document.getElementById('fijosSelectorModal').style.display = 'flex';
+    }
+
+    function cerrarSelectorFijos() {
+        document.getElementById('fijosSelectorModal').style.display = 'none';
+    }
+
+    function inyectarFijosSeleccionados() {
+        const checkboxes = document.querySelectorAll('input[name="fijosSeleccionados"]:checked');
+        if(checkboxes.length === 0) {
+            cerrarSelectorFijos();
+            mostrarMensajeCentro('alerta', 'Atención', 'No seleccionaste ningún gasto fijo.');
+            return;
+        }
+
+        checkboxes.forEach(cb => {
+            const f = listaGastosFijosGlobales.find(item => item.id === cb.value);
+            if(f) {
+                const clonGasto = { id: Date.now() + Math.random(), desc: `📌 ${f.desc}`, monto: f.monto, cat: f.cat, img: "" };
+                mesActivo.gastos.unshift(clonGasto);
+            }
+        });
+
+        recalcularTotalesDesdeLista();
+        refrescarDashboard();
+        renderizarGastos();
+        cerrarYGuardarMes(true);
+        cerrarSelectorFijos();
+        mostrarMensajeCentro('exito', '⚡ Sincronizado', 'Se cargaron los gastos fijos elegidos.');
+    }
+
+
+    /* SUBIR FOTOS DIRECTAMENTE DESDE LA LISTA ABAJO */
+    function solicitarFotoDirecta(idGasto) {
+        idGastoParaFotoDirecta = idGasto;
+        document.getElementById('inputFotoDirecta').click(); // Simula el click en el input oculto
+    }
+
+    window.procesarFotoDirectaLista = function(input) {
+        const file = input.files[0];
+        if (file && idGastoParaFotoDirecta !== null) {
+            const reader = new FileReader();
+            reader.onloadend = async function() {
+                const base64Str = reader.result;
+                
+                // Buscar el gasto exacto y meterle la imagen
+                const index = mesActivo.gastos.findIndex(g => g.id == idGastoParaFotoDirecta);
+                if (index !== -1) {
+                    mesActivo.gastos[index].img = base64Str;
+                    
+                    // Guardar altiro en la base de datos
+                    await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+                    renderizarGastos();
+                    mostrarMensajeCentro('exito', 'Boleta Subida', 'La foto de la boleta fue anexada correctamente al gasto.');
+                }
+                idGastoParaFotoDirecta = null;
+                input.value = ""; // Limpiar input
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+
+    /* REGISTRO DE MOVIMIENTOS TRADICIONALES */
+    function ejecutarGasto() {
+        let desc = document.getElementById('gDesc').value.trim();
+        const monto = limpiarFormateo(document.getElementById('gMonto').value);
+        const cat = document.getElementById('gCat').value;
+
+        if(!desc || monto <= 0) { mostrarMensajeCentro('alerta', 'Faltan Campos', 'Complete detalle y monto de la transacción.'); return; }
+        desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+        if (idGastoEditando !== null) {
+            mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== idGastoEditando);
+            idGastoEditando = null;
+            document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-plus"></i> Agregar Gasto`;
+        }
+
+        const nuevoGasto = { id: Date.now(), desc, monto, cat, img: base64GastoImg };
+        mesActivo.gastos.unshift(nuevoGasto);
+
+        recalcularTotalesDesdeLista();
+
+        document.getElementById('gDesc').value = "";
+        document.getElementById('gMonto').value = "0";
+        document.getElementById('gImg').value = "";
+        document.getElementById('fileName').innerText = "Adjuntar Foto";
+        base64GastoImg = "";
+
+        refrescarDashboard();
+        renderizarGastos();
+        cerrarYGuardarMes(true); 
+    }
+
+    function recalcularTotalesDesdeLista() {
+        let acumulado = 0;
+        if(mesActivo.gastos) {
+            mesActivo.gastos.forEach(g => acumulado += g.monto);
+        }
+        mesActivo.totalGastado = acumulado;
+        
+        const sItho = limpiarFormateo(document.getElementById('sueldoItho').value);
+        const sNatty = limpiarFormateo(document.getElementById('sueldoNatty').value);
+        const casa = limpiarFormateo(document.getElementById('ahorroCasa').value);
+        
+        mesActivo.sueldoItho = sItho;
+        mesActivo.sueldoNatty = sNatty;
+        mesActivo.ingresos = sItho + sNatty;
+        mesActivo.ahorroCasa = casa;
+        mesActivo.disponible = mesActivo.ingresos - casa - acumulado;
+    }
+
+    function editarGasto(idGasto) {
+        const g = mesActivo.gastos.find(g => g.id === idGasto);
+        if(!g) return;
+
+        document.getElementById('gDesc').value = g.desc.replace("📌 ", "");
+        document.getElementById('gMonto').value = g.monto.toLocaleString('de-DE');
+        document.getElementById('gCat').value = g.cat;
+        base64GastoImg = g.img || "";
+        if(g.img) document.getElementById('fileName').innerText = "Tiene foto ✓";
+
+        idGastoEditando = idGasto;
+        document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Guardar Corrección`;
+    }
+
+    function pedirConfirmacionEliminarGasto(idGasto) {
+        mostrarMensajeCentro('alerta', '¿Eliminar Registro?', 'Esta transacción se borrará permanentemente.', () => {
+            mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== idGasto);
+            recalcularTotalesDesdeLista();
+            refrescarDashboard();
+            renderizarGastos();
+            cerrarYGuardarMes(true);
+        });
+    }
+
+    async function cerrarYGuardarMes(silencioso = false) {
+        try {
+            recalcularTotalesDesdeLista();
+            await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+            if(!silencioso) mostrarMensajeCentro('exito', 'Guardado Seguro', 'Sincronizado con Firebase.');
+            renderizarHistorial();
+            refrescarDashboard();
+        } catch (e) { console.error(e); }
+    }
+
+    async function renderizarHistorial() {
+        const contenedor = document.getElementById('contenedorHistorial');
+        contenedor.innerHTML = "";
+        try {
+            const querySnapshot = await getDocs(collection(db, "finanzas_meses"));
+            let meses = [];
+            querySnapshot.forEach((doc) => { meses.push(doc.data()); });
+            meses.sort((a,b) => b.mes.localeCompare(a.mes));
+            meses.forEach(h => {
+                contenedor.innerHTML += `
+                    <div class="historial-item">
+                        <div class="historial-meta">
+                            <span class="historial-mes"><i class="fa-solid fa-cloud"></i> ${h.mes}</span>
+                        </div>
+                        <span style="font-size:11px; color:var(--texto-secundario)">Casa: $${Math.round(h.ahorroCasa || 0).toLocaleString('de-DE')} | Disp: $${Math.round(h.disponible || 0).toLocaleString('de-DE')}</span>
+                        <div class="historial-acciones">
+                            <button class="btn-load-history" onclick="cargarMesPasado('${h.mes}')"><i class="fa-solid fa-eye"></i> Visualizar</button>
+                            <button class="btn-delete-history" onclick="eliminarMesCompleto('${h.mes}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        } catch(e) {}
+    }
+
+    function pedirConfirmacionEliminarMes(mesTarget) {
+        mostrarMensajeCentro('alerta', '¿Borrar Mes Completo?', `¡Peligro! Borrarás todo el historial de ${mesTarget}.`, async () => {
+            try {
+                await deleteDoc(doc(db, "finanzas_meses", mesTarget));
+                if(mesActivo.mes === mesTarget) salirModoHistorico();
+                renderizarHistorial();
+            } catch(e) {}
+        });
+    }
+
+    function cargarMesPasado(mesTarget) {
+        esModoHistorico = true;
+        getDoc(doc(db, "finanzas_meses", mesTarget)).then(docSnap => {
+            if(docSnap.exists()){
+                let data = docSnap.data();
+                document.getElementById('mes').value = data.mes;
+                document.getElementById('ahorroCasa').value = (data.ahorroCasa || 0).toLocaleString('de-DE');
+                document.getElementById('sueldoItho').value = (data.sueldoItho || 0).toLocaleString('de-DE');
+                document.getElementById('sueldoNatty').value = (data.sueldoNatty || 0).toLocaleString('de-DE');
+                mesActivo = {...data};
+
+                document.getElementById('badgeModo').innerText = "MODO VISUALIZACIÓN";
+                document.getElementById('badgeModo').style.backgroundColor = "var(--neon-azul)";
+                document.getElementById('badgeModo').style.display = 'inline-block';
+                document.getElementById('btnSincronizar').style.display = 'none';
+                document.getElementById('bloqueBotonesHistoricos').style.display = 'flex';
+                document.getElementById('btnHabilitarEdicion').style.display = 'inline-flex';
+                document.getElementById('dashboard').style.display = 'block';
+                
+                bloquearControlesUI(true);
+                refrescarDashboard();
+                renderizarGastos();
+                toggleSidebar(false);
+            }
+        });
+    }
+
+    function permitirEditarHistorico() {
+        bloquearControlesUI(false);
+        document.getElementById('badgeModo').innerText = "EDICIÓN HISTÓRICA";
+        document.getElementById('badgeModo').style.backgroundColor = "var(--neon-naranja)";
+        document.getElementById('btnHabilitarEdicion').style.display = 'none';
+    }
+
+    function bloquearControlesUI(bloquear) {
+        document.getElementById('ahorroCasa').disabled = bloquear;
+        document.getElementById('sueldoItho').disabled = bloquear;
+        document.getElementById('sueldoNatty').disabled = bloquear;
+        document.getElementById('mes').disabled = bloquear;
+
+        if(bloquear) {
+            document.getElementById('bloqueAgregarGasto').style.display = 'none';
+            document.getElementById('btnCargarFijosMasivo').style.display = 'none';
+            document.getElementById('btnArchivar').style.display = 'none';
+            document.getElementById('seccionFijosMaestros').style.display = 'none';
+        } else {
+            document.getElementById('bloqueAgregarGasto').style.display = 'block';
+            document.getElementById('btnCargarFijosMasivo').style.display = 'block';
+            document.getElementById('btnArchivar').style.display = 'block';
+            document.getElementById('seccionFijosMaestros').style.display = 'block';
+        }
+        renderizarGastos();
+    }
+
+    function salirModoHistorico() {
+        document.getElementById('ahorroCasa').value = "0";
+        document.getElementById('sueldoItho').value = "0";
+        document.getElementById('sueldoNatty').value = "0";
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('badgeModo').style.display = 'none';
+        document.getElementById('bloqueBotonesHistoricos').style.display = 'none';
+        document.getElementById('btnSincronizar').style.display = 'inline-flex';
+        document.getElementById('mes').value = new Date().toISOString().slice(0, 7);
+        esModoHistorico = false;
+        bloquearControlesUI(false);
+    }
+
+    function refrescarDashboard() {
+        document.getElementById('dIngresos').innerText = "$" + Math.round(mesActivo.ingresos || 0).toLocaleString('de-DE');
+        document.getElementById('dAhorro').innerText = "$" + Math.round(mesActivo.ahorroCasa || 0).toLocaleString('de-DE');
+        document.getElementById('dGastado').innerText = "$" + Math.round(mesActivo.totalGastado || 0).toLocaleString('de-DE');
+        const dispEl = document.getElementById('dDisponible');
+        dispEl.innerText = "$" + Math.round(mesActivo.disponible || 0).toLocaleString('de-DE');
+        dispEl.style.color = mesActivo.disponible < 0 ? 'var(--neon-rojo)' : 'var(--neon-verde)';
+    }
+
+    function renderizarGastos(gastosAFiltrar = null) {
+        const contenedor = document.getElementById('contenedorGastos');
+        contenedor.innerHTML = "";
+        const lista = gastosAFiltrar || mesActivo.gastos || [];
+
+        if(lista.length === 0) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--texto-secundario); font-size:13px; margin:20px 0;">Sin registros.</p>`;
+            return;
+        }
+
+        const ocultarBotonesEdicion = (esModoHistorico && document.getElementById('btnHabilitarEdicion').style.display !== 'none');
+
+        lista.forEach(g => {
+            // Icono de foto cambia si ya tiene o si falta adjuntar
+            const botonFoto = g.img 
+                ? `<button class="btn-icon btn-view-img" onclick="verComprobante('${g.id}')" title="Ver Comprobante"><i class="fa-solid fa-image"></i></button>` 
+                : (!ocultarBotonesEdicion ? `<button class="btn-icon btn-add-img" onclick="solicitarFotoDirecta('${g.id}')" title="Subir Boleta"><i class="fa-solid fa-camera"></i></button>` : '');
+
+            contenedor.innerHTML += `
+                <div class="gasto-row">
+                    <div class="gasto-info">
+                        <div class="gasto-title">${g.desc}</div>
+                        <div class="gasto-cat">${g.cat}</div>
+                    </div>
+                    <div class="gasto-acciones">
+                        <span class="gasto-monto">-$${g.monto.toLocaleString('de-DE')}</span>
+                        ${botonFoto}
+                        
+                        ${!ocultarBotonesEdicion ? `
+                            <button class="btn-icon btn-edit" onclick="editarGasto(${g.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-icon btn-delete" onclick="eliminarGasto(${g.id})"><i class="fa-solid fa-trash-can"></i></button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    window.filtrarGastos = function() {
+        const query = document.getElementById('buscador').value.toLowerCase();
+        const lista = mesActivo.gastos || [];
+        const filtrados = lista.filter(g => g.desc.toLowerCase().includes(query) || g.cat.toLowerCase().includes(query));
+        renderizarGastos(filtrados);
+    }
+
+    function formatearInputMoneda(input) {
+        let valor = input.value.replace(/\D/g, "");
+        if(valor === "") valor = "0";
+        input.value = Number(valor).toLocaleString('de-DE');
+    }
+    window.formatearInputMoneda = formatearInputMoneda;
+
+    function limpiarFormateo(str) { return parseFloat(str.replace(/\./g, "")) || 0; }
+
+    function procesarFoto(input) {
+        const file = input.files[0];
+        if (file) {
+            document.getElementById('fileName').innerText = "Cargada ✓";
+            const reader = new FileReader();
+            reader.onloadend = function() { base64GastoImg = reader.result; }
+            reader.readAsDataURL(file);
+        }
+    }
+    window.procesarFoto = procesarFoto;
+
+    function verComprobante(idGasto) {
+        const g = mesActivo.gastos.find(g => g.id == idGasto);
+        if(g && g.img) {
+            document.getElementById('modalImg').src = g.img;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+    }
+    window.cerrarModal = function() { document.getElementById('imageModal').style.display = 'none'; }
+
+    renderInitialize();
+    function renderInitialize() { 
+        setTimeout(() => { 
+            renderizarHistorial(); 
+            cargarGastosFijosGlobales(); 
+        }, 1500); 
+    }
+</script>
+</body>
+</html>
