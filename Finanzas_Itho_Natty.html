@@ -59,7 +59,12 @@
         .sidebar-historial { position: fixed; top: 0; left: -340px; width: 300px; height: 100%; background-color: #0e1322; border-right: 1px solid var(--border-color); box-shadow: 5px 0 30px rgba(0,0,0,0.7); z-index: 1000; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .sidebar-historial.open { left: 0; }
         .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; }
+        .sidebar-overlay.show { display: block; }
         
+        .historial-item-mes { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 8px; cursor: pointer; }
+        .historial-item-mes:hover { background: rgba(255,255,255,0.05); }
+
         .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
         .card { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 18px; padding: 14px; text-align: center; }
         .card span { display: block; font-size: 11px; color: var(--texto-secundario); text-transform: uppercase; font-weight: 600; }
@@ -67,16 +72,16 @@
         .c-casa .monto { color: var(--neon-azul); }
         .c-gastado .monto { color: var(--neon-rojo); }
         .c-disponible .monto { color: var(--neon-verde); }
+        .c-ingresos .monto { color: var(--texto-principal); }
 
         .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .input-wrapper { display: flex; flex-direction: column; }
+        .input-wrapper { display: flex; flex-direction: column; width: 100%; }
         .input-wrapper label { font-size: 11px; color: var(--texto-secundario); margin-bottom: 5px; font-weight: 600; padding-left: 2px; }
         
-        /* INPUTS MODERNOS MÁS GRANDES */
-        input, select { background-color: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; color: white; font-size: 15px; box-sizing: border-box; -webkit-appearance: none; }
+        input, select { background-color: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; color: white; font-size: 15px; box-sizing: border-box; -webkit-appearance: none; width: 100%; }
         input:focus, select:focus { border-color: var(--neon-azul); outline: none; background-color: rgba(0, 0, 0, 0.5); }
         
-        .file-upload { border: 1px dashed var(--border-color); padding: 14px; border-radius: 12px; text-align: center; font-size: 13px; color: var(--texto-secundario); cursor: pointer; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .file-upload { border: 1px dashed var(--border-color); padding: 14px; border-radius: 12px; text-align: center; font-size: 13px; color: var(--texto-secundario); cursor: pointer; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; height: 50px; }
         
         .btn { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--border-color); color: white; padding: 14px 20px; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; box-sizing: border-box; }
         .btn-primary { background: linear-gradient(135deg, #0284c7, #0369a1); border: none; }
@@ -88,7 +93,6 @@
         .search-container input { width: 100%; padding-left: 40px; }
         .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--texto-secundario); }
 
-        /* LISTA OPTIMIZADA PARA DESPLAZAMIENTO MÓVIL */
         .lista-gastos { max-height: 340px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 16px; background-color: rgba(0, 0, 0, 0.2); margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
         .gasto-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border-bottom: 1px solid var(--border-color); }
         .gasto-info { flex-grow: 1; min-width: 0; padding-right: 10px; }
@@ -354,6 +358,11 @@
     window.cerrarSelectorFijos = cerrarSelectorFijos;
     window.inyectarFijosSeleccionados = inyectarFijosSeleccionados;
     window.solicitarFotoDirecta = solicitarFotoDirecta;
+    window.formatearInputMoneda = formatearInputMoneda;
+    window.procesarFoto = procesarFoto;
+    window.procesarFotoDirectaLista = procesarFotoDirectaLista;
+    window.filtrarGastos = filtrarGastos;
+    window.cerrarModal = cerrarModal;
 
     document.getElementById('mes').value = new Date().toISOString().slice(0, 7);
 
@@ -364,6 +373,19 @@
     let base64GastoImg = "";
     let idGastoEditando = null;
     let idGastoParaFotoDirecta = null;
+
+    // Helpers de Formateo
+    function limpiarFormateo(valor) {
+        if (!valor) return 0;
+        const limpio = valor.toString().replace(/\./g, '');
+        return parseInt(limpio) || 0;
+    }
+
+    function formatearInputMoneda(input) {
+        let valor = input.value.replace(/\D/g, '');
+        if (valor === '') valor = '0';
+        input.value = parseInt(valor).toLocaleString('de-DE');
+    }
 
     function mostrarMensajeCentro(tipo, titulo, mensaje, callbackConfirmar = null) {
         const overlay = document.getElementById('centroNotifOverlay');
@@ -399,27 +421,270 @@
         const sItho = limpiarFormateo(document.getElementById('sueldoItho').value);
         const sNatty = limpiarFormateo(document.getElementById('sueldoNatty').value);
         const casa = limpiarFormateo(document.getElementById('ahorroCasa').value);
+        
+        esModoHistorico = (mesID !== new Date().toISOString().slice(0, 7));
+        
         const docSnap = await getDoc(doc(db, "finanzas_meses", mesID));
         if (docSnap.exists()) {
             mesActivo = docSnap.data();
             document.getElementById('sueldoItho').value = mesActivo.sueldoItho.toLocaleString('de-DE');
             document.getElementById('sueldoNatty').value = mesActivo.sueldoNatty.toLocaleString('de-DE');
             document.getElementById('ahorroCasa').value = mesActivo.ahorroCasa.toLocaleString('de-DE');
+            if(esModoHistorico) {
+                activarModoHistoricoUI(true);
+            } else {
+                activarModoHistoricoUI(false);
+            }
         } else {
+            if(esModoHistorico) {
+                mostrarMensajeCentro('alerta', 'No Existe', 'El mes seleccionado no tiene registros guardados.');
+                return;
+            }
             if((sItho + sNatty) === 0) { mostrarMensajeCentro('alerta', 'Faltan Datos', 'Ingresa los sueldos base para iniciar un mes.'); return; }
             mesActivo = { mes: mesID, sueldoItho: sItho, sueldoNatty: sNatty, ingresos: sItho + sNatty, ahorroCasa: casa, totalGastado: 0, disponible: (sItho + sNatty) - casa, gastos: [] };
+            activarModoHistoricoUI(false);
         }
-        bloquearControlesUI(false);
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('btnArchivar').style.display = 'block';
         refrescarDashboard(); renderizarGastos();
     }
 
+    function activarModoHistoricoUI(bloquear) {
+        document.getElementById('badgeModo').style.display = bloquear ? 'inline-block' : 'none';
+        document.getElementById('bloqueBotonesHistoricos').style.display = bloquear ? 'flex' : 'none';
+        document.getElementById('btnSincronizar').style.display = bloquear ? 'none' : 'block';
+        bloquearControlesUI(bloquear);
+    }
+
+    function bloquearControlesUI(bloquear) {
+        document.getElementById('sueldoItho').disabled = bloquear;
+        document.getElementById('sueldoNatty').disabled = bloquear;
+        document.getElementById('ahorroCasa').disabled = bloquear;
+        document.getElementById('bloqueAgregarGasto').style.display = bloquear ? 'none' : 'block';
+        document.getElementById('btnCargarFijosMasivo').style.display = bloquear ? 'none' : 'block';
+        document.getElementById('btnArchivar').style.display = bloquear ? 'none' : 'block';
+    }
+
+    function permitirEditarHistorico() {
+        bloquearControlesUI(false);
+        document.getElementById('bloqueAgregarGasto').style.display = 'block';
+        document.getElementById('btnCargarFijosMasivo').style.display = 'block';
+        document.getElementById('btnArchivar').style.display = 'block';
+        document.getElementById('btnHabilitarEdicion').style.display = 'none';
+    }
+
+    function salirModoHistorico() {
+        document.getElementById('mes').value = new Date().toISOString().slice(0, 7);
+        inicializarMes();
+    }
+
+    function refrescarDashboard() {
+        const ingresos = mesActivo.sueldoItho + mesActivo.sueldoNatty;
+        mesActivo.ingresos = ingresos;
+        mesActivo.totalGastado = mesActivo.gastos.reduce((acc, curr) => acc + curr.monto, 0);
+        mesActivo.disponible = ingresos - mesActivo.ahorroCasa - mesActivo.totalGastado;
+
+        document.getElementById('dIngresos').innerText = "$" + mesActivo.ingresos.toLocaleString('de-DE');
+        document.getElementById('dAhorro').innerText = "$" + mesActivo.ahorroCasa.toLocaleString('de-DE');
+        document.getElementById('dGastado').innerText = "$" + mesActivo.totalGastado.toLocaleString('de-DE');
+        document.getElementById('dDisponible').innerText = "$" + mesActivo.disponible.toLocaleString('de-DE');
+    }
+
+    // Procesamiento de imágenes (Base64)
+    function procesarFoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64GastoImg = e.target.result;
+                document.getElementById('fileName').innerText = "Imagen Lista ✅";
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function solicitarFotoDirecta(gastoId) {
+        idGastoParaFotoDirecta = gastoId;
+        document.getElementById('inputFotoDirecta').click();
+    }
+
+    function procesarFotoDirectaLista(input) {
+        if (input.files && input.files[0] && idGastoParaFotoDirecta) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const gasto = mesActivo.gastos.find(g => g.id === idGastoParaFotoDirecta);
+                if (gasto) {
+                    gasto.img = e.target.result;
+                    await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+                    mostrarMensajeCentro('exito', 'Foto Vinculada', 'Comprobante añadido al registro.');
+                    renderizarGastos();
+                }
+                idGastoParaFotoDirecta = null;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Acciones del libro de egresos
+    async function ejecutarGasto() {
+        let desc = document.getElementById('gDesc').value.trim();
+        const monto = limpiarFormateo(document.getElementById('gMonto').value);
+        const cat = document.getElementById('gCat').value;
+        if(!desc || monto <= 0) { mostrarMensajeCentro('alerta', 'Campos vacíos', 'Completa la descripción y el monto.'); return; }
+        
+        desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+        if(idGastoEditando !== null) {
+            mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== idGastoEditando);
+            idGastoEditando = null;
+            document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-plus"></i> Añadir Registro`;
+        }
+
+        const nuevoGasto = { id: Date.now().toString(), desc, monto, cat, img: base64GastoImg };
+        mesActivo.gastos.unshift(nuevoGasto);
+        
+        base64GastoImg = "";
+        document.getElementById('fileName').innerText = "Foto Boleta";
+        document.getElementById('gDesc').value = "";
+        document.getElementById('gMonto').value = "0";
+
+        refrescarDashboard();
+        renderizarGastos();
+        await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+    }
+
+    function renderizarGastos(gastosFiltrados = null) {
+        const contenedor = document.getElementById('contenedorGastos');
+        contenedor.innerHTML = "";
+        const lista = gastosFiltrados || mesActivo.gastos;
+
+        if(lista.length === 0) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--texto-secundario); padding:20px;">Sin movimientos registrados.</p>`;
+            return;
+        }
+
+        lista.forEach(g => {
+            const btnImagen = g.img 
+                ? `<button class="btn-icon btn-view-img" onclick="verComprobante('${g.id}')"><i class="fa-solid fa-image"></i></button>`
+                : `<button class="btn-icon btn-add-img" onclick="solicitarFotoDirecta('${g.id}')"><i class="fa-solid fa-camera"></i></button>`;
+            
+            contenedor.innerHTML += `
+                <div class="gasto-row">
+                    <div class="gasto-info">
+                        <div class="gasto-title">${g.desc}</div>
+                        <div class="gasto-cat">${g.cat}</div>
+                    </div>
+                    <div class="gasto-acciones">
+                        <span class="gasto-monto">$${g.monto.toLocaleString('de-DE')}</span>
+                        ${btnImagen}
+                        <button class="btn-icon btn-edit" onclick="editarGasto('${g.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-icon btn-delete" onclick="eliminarGasto('${g.id}')"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function editarGasto(id) {
+        const g = mesActivo.gastos.find(item => item.id === id);
+        if(!g) return;
+        document.getElementById('gDesc').value = g.desc;
+        document.getElementById('gMonto').value = g.monto.toLocaleString('de-DE');
+        document.getElementById('gCat').value = g.cat;
+        base64GastoImg = g.img || "";
+        if(g.img) document.getElementById('fileName').innerText = "Imagen Cargada ✅";
+        
+        idGastoEditando = id;
+        document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-check"></i> Modificar Registro`;
+        document.getElementById('gDesc').focus();
+    }
+
+    function pedirConfirmacionEliminarGasto(id) {
+        mostrarMensajeCentro('alerta', '¿Eliminar Transacción?', 'Este registro se borrará permanentemente.', async () => {
+            mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== id);
+            refrescarDashboard();
+            renderizarGastos();
+            await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+        });
+    }
+
+    function verComprobante(id) {
+        const g = mesActivo.gastos.find(item => item.id === id);
+        if(g && g.img) {
+            document.getElementById('modalImg').src = g.img;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+    }
+
+    function cerrarModal() { document.getElementById('imageModal').style.display = 'none'; }
+
+    function filtrarGastos() {
+        const q = document.getElementById('buscador').value.toLowerCase().trim();
+        if(!q) { renderizarGastos(); return; }
+        const filtrados = mesActivo.gastos.filter(g => g.desc.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q));
+        renderizarGastos(filtrados);
+    }
+
+    async function cerrarYGuardarMes() {
+        mesActivo.sueldoItho = limpiarFormateo(document.getElementById('sueldoItho').value);
+        mesActivo.sueldoNatty = limpiarFormateo(document.getElementById('sueldoNatty').value);
+        mesActivo.ahorroCasa = limpiarFormateo(document.getElementById('ahorroCasa').value);
+        refrescarDashboard();
+        
+        await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+        mostrarMensajeCentro('exito', 'Guardado Exitoso', 'Los datos se sincronizaron con Firebase Cloud.');
+        renderizarHistorial();
+    }
+
+    // Historial Lateral
+    async function renderizarHistorial() {
+        const contenedor = document.getElementById('contenedorHistorial');
+        contenedor.innerHTML = "";
+        const querySnapshot = await getDocs(collection(db, "finanzas_meses"));
+        
+        let meses = [];
+        querySnapshot.forEach(doc => { meses.push(doc.data()); });
+        meses.sort((a,b) => b.mes.localeCompare(a.mes));
+
+        if(meses.length === 0) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--texto-secundario); font-size:13px;">No hay meses archivados.</p>`;
+            return;
+        }
+
+        meses.forEach(m => {
+            contenedor.innerHTML += `
+                <div class="historial-item-mes">
+                    <div onclick="window.cargarMesPasado('${m.mes}')" style="flex-grow:1;">
+                        <div style="font-weight:700; color:white;">📅 ${m.mes}</div>
+                        <div style="font-size:11px; color:var(--texto-secundario); margin-top:2px;">Disp: $${m.disponible.toLocaleString('de-DE')}</div>
+                    </div>
+                    <button class="btn-icon btn-delete" style="padding:4px;" onclick="window.eliminarMesCompleto('${m.mes}')"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+        });
+    }
+
+    function cargarMesPasado(mesID) {
+        document.getElementById('mes').value = mesID;
+        toggleSidebar(false);
+        inicializerMes();
+    }
+
+    function pedirConfirmacionEliminarMes(mesID) {
+        mostrarMensajeCentro('alerta', '¿Eliminar Todo el Mes?', `Se borrarán permanentemente las finanzas de ${mesID}.`, async () => {
+            await deleteDoc(doc(db, "finanzas_meses", mesID));
+            mostrarMensajeCentro('exito', 'Mes Eliminado', 'Los registros se han borrado de la nube.');
+            renderizarHistorial();
+            if(mesActivo.mes === mesID) { salirModoHistorico(); }
+        });
+    }
+
+    // Gastos Fijos Maestros
     async function guardarGastoFijo() {
         let desc = document.getElementById('fDesc').value.trim();
         const monto = limpiarFormateo(document.getElementById('fMonto').value);
         const cat = document.getElementById('fCat').value;
         if(!desc || monto <= 0) { mostrarMensajeCentro('alerta', 'Incompleto', 'Rellena la descripción y monto del fijo.'); return; }
+        
         desc = desc.charAt(0).toUpperCase() + desc.slice(1);
         if(idFijoEditando !== null) {
             listaGastosFijosGlobales = listaGastosFijosGlobales.filter(f => f.id !== idFijoEditando);
@@ -491,220 +756,33 @@
 
     function cerrarSelectorFijos() { document.getElementById('fijosSelectorModal').style.display = 'none'; }
 
-    function inyectarFijosSeleccionados() {
+    async function inyectarFijosSeleccionados() {
         const checkboxes = document.querySelectorAll('input[name="fijosSeleccionados"]:checked');
         if(checkboxes.length === 0) { cerrarSelectorFijos(); return; }
+        
         checkboxes.forEach(cb => {
             const f = listaGastosFijosGlobales.find(item => item.id === cb.value);
-            if(f) { mesActivo.gastos.unshift({ id: Date.now() + Math.random(), desc: `📌 ${f.desc}`, monto: f.monto, cat: f.cat, img: "" }); }
-        });
-        recalcularTotalesDesdeLista(); refrescarDashboard(); renderizarGastos();
-        cerrarYGuardarMes(true); cerrarSelectorFijos();
-    }
-
-    function solicitarFotoDirecta(idGasto) { idGastoParaFotoDirecta = idGasto; document.getElementById('inputFotoDirecta').click(); }
-
-    window.procesarFotoDirectaLista = function(input) {
-        const file = input.files[0];
-        if (file && idGastoParaFotoDirecta !== null) {
-            const reader = new FileReader();
-            reader.onloadend = async function() {
-                const index = mesActivo.gastos.findIndex(g => g.id == idGastoParaFotoDirecta);
-                if (index !== -1) {
-                    mesActivo.gastos[index].img = reader.result;
-                    await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
-                    renderizarGastos();
+            if(f) {
+                const yaExiste = mesActivo.gastos.some(g => g.desc === `📌 Fijo: ${f.desc}`);
+                if(!yaExiste) {
+                    mesActivo.gastos.unshift({
+                        id: 'fijo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                        desc: `📌 Fijo: ${f.desc}`,
+                        monto: f.monto,
+                        cat: f.cat,
+                        img: ""
+                    });
                 }
-                idGastoParaFotoDirecta = null; input.value = "";
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function ejecutarGasto() {
-        let desc = document.getElementById('gDesc').value.trim();
-        const monto = limpiarFormateo(document.getElementById('gMonto').value);
-        const cat = document.getElementById('gCat').value;
-        if(!desc || monto <= 0) { mostrarMensajeCentro('alerta', 'Campos Vacíos', 'Especifica descripción y monto.'); return; }
-        desc = desc.charAt(0).toUpperCase() + desc.slice(1);
-        if (idGastoEditando !== null) { mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== idGastoEditando); idGastoEditando = null; document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-plus"></i> Añadir Registro`; }
-        mesActivo.gastos.unshift({ id: Date.now(), desc, monto, cat, img: base64GastoImg });
-        recalcularTotalesDesdeLista();
-        document.getElementById('gDesc').value = ""; document.getElementById('gMonto').value = "0"; document.getElementById('gImg').value = "";
-        document.getElementById('fileName').innerText = "Foto Boleta"; base64GastoImg = "";
-        refrescarDashboard(); renderizarGastos(); cerrarYGuardarMes(true);
-    }
-
-    function recalcularTotalesDesdeLista() {
-        let acumulado = 0; if(mesActivo.gastos) { mesActivo.gastos.forEach(g => acumulado += g.monto); }
-        mesActivo.totalGastado = acumulado;
-        const sItho = limpiarFormateo(document.getElementById('sueldoItho').value);
-        const sNatty = limpiarFormateo(document.getElementById('sueldoNatty').value);
-        const casa = limpiarFormateo(document.getElementById('ahorroCasa').value);
-        mesActivo.sueldoItho = sItho; mesActivo.sueldoNatty = sNatty; mesActivo.ingresos = sItho + sNatty; mesActivo.ahorroCasa = casa;
-        mesActivo.disponible = mesActivo.ingresos - casa - acumulado;
-    }
-
-    function editarGasto(idGasto) {
-        const g = mesActivo.gastos.find(g => g.id === idGasto); if(!g) return;
-        document.getElementById('gDesc').value = g.desc.replace("📌 ", ""); document.getElementById('gMonto').value = g.monto.toLocaleString('de-DE'); document.getElementById('gCat').value = g.cat;
-        base64GastoImg = g.img || ""; if(g.img) document.getElementById('fileName').innerText = "Tiene foto ✓";
-        idGastoEditando = idGasto; document.getElementById('btnAgregarGastoAction').innerHTML = `<i class="fa-solid fa-check"></i> Modificar`;
-    }
-
-    function pedirConfirmacionEliminarGasto(idGasto) {
-        mostrarMensajeCentro('alerta', '¿Eliminar Transacción?', 'Se borrará del registro permanentemente.', () => {
-            mesActivo.gastos = mesActivo.gastos.filter(g => g.id !== idGasto);
-            recalcularTotalesDesdeLista(); refrescarDashboard(); renderizarGastos(); cerrarYGuardarMes(true);
-        });
-    }
-
-    async function cerrarYGuardarMes(silencioso = false) {
-        try {
-            recalcularTotalesDesdeLista();
-            await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
-            if(!silencioso) mostrarMensajeCentro('exito', 'Guardado Seguro', 'Sincronizado correctamente.');
-            renderizarHistorial(); refrescarDashboard();
-        } catch (e) { console.error(e); }
-    }
-
-    async function renderizarHistorial() {
-        const contenedor = document.getElementById('contenedorHistorial'); contenedor.innerHTML = "";
-        try {
-            const querySnapshot = await getDocs(collection(db, "finanzas_meses"));
-            let meses = []; querySnapshot.forEach((doc) => { meses.push(doc.data()); });
-            meses.sort((a,b) => b.mes.localeCompare(a.mes));
-            meses.forEach(h => {
-                contenedor.innerHTML += `
-                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:14px; padding:12px; margin-bottom:10px; font-size:13px;">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--neon-azul); margin-bottom:4px;"><span>📅 ${h.mes}</span></div>
-                        <div style="color:var(--texto-secundario); font-size:11px; margin-bottom:10px;">Disp: $${Math.round(h.disponible || 0).toLocaleString('de-DE')}</div>
-                        <div style="display:flex; gap:8px; justify-content:flex-end;">
-                            <button style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); color:var(--neon-azul); padding:6px 10px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="cargarMesPasado('${h.mes}')">Ver</button>
-                            <button style="background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); color:var(--neon-rojo); padding:6px 10px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="eliminarMesCompleto('${h.mes}')">Borrar</button>
-                        </div>
-                    </div>
-                `;
-            });
-        } catch(e) {}
-    }
-
-    function pedirConfirmacionEliminarMes(mesTarget) {
-        mostrarMensajeCentro('alerta', '¿Eliminar Historial?', `¡Alerta! Se borrarán todos los datos del mes de ${mesTarget}.`, async () => {
-            try { await deleteDoc(doc(db, "finanzas_meses", mesTarget)); if(mesActivo.mes === mesTarget) salirModoHistorico(); renderizarHistorial(); } catch(e) {}
-        });
-    }
-
-    function cargarMesPasado(mesTarget) {
-        esModoHistorico = true;
-        getDoc(doc(db, "finanzas_meses", mesTarget)).then(docSnap => {
-            if(docSnap.exists()){
-                let data = docSnap.data();
-                document.getElementById('mes').value = data.mes;
-                document.getElementById('ahorroCasa').value = (data.ahorroCasa || 0).toLocaleString('de-DE');
-                document.getElementById('sueldoItho').value = (data.sueldoItho || 0).toLocaleString('de-DE');
-                document.getElementById('sueldoNatty').value = (data.sueldoNatty || 0).toLocaleString('de-DE');
-                mesActivo = {...data};
-                document.getElementById('badgeModo').innerText = "LECTURA";
-                document.getElementById('badgeModo').style.display = 'inline-block';
-                document.getElementById('btnSincronizar').style.display = 'none';
-                document.getElementById('bloqueBotonesHistoricos').style.display = 'flex';
-                document.getElementById('btnHabilitarEdicion').style.display = 'inline-flex';
-                document.getElementById('dashboard').style.display = 'block';
-                bloquearControlesUI(true); refrescarDashboard(); renderizarGastos(); toggleSidebar(false);
             }
         });
-    }
-
-    function permitirEditarHistorico() {
-        bloquearControlesUI(false);
-        document.getElementById('badgeModo').innerText = "EDICIÓN HISTÓRICA";
-        document.getElementById('btnHabilitarEdicion').style.display = 'none';
-    }
-
-    function bloquearControlesUI(bloquear) {
-        document.getElementById('ahorroCasa').disabled = bloquear; document.getElementById('sueldoItho').disabled = bloquear; document.getElementById('sueldoNatty').disabled = bloquear; document.getElementById('mes').disabled = bloquear;
-        if(bloquear) {
-            document.getElementById('bloqueAgregarGasto').style.display = 'none'; document.getElementById('btnCargarFijosMasivo').style.display = 'none';
-            document.getElementById('btnArchivar').style.display = 'none'; document.getElementById('seccionFijosMaestros').style.display = 'none';
-        } else {
-            document.getElementById('bloqueAgregarGasto').style.display = 'block'; document.getElementById('btnCargarFijosMasivo').style.display = 'block';
-            document.getElementById('btnArchivar').style.display = 'block'; document.getElementById('seccionFijosMaestros').style.display = 'block';
-        }
+        
+        refrescarDashboard();
         renderizarGastos();
+        cerrarSelectorFijos();
+        await setDoc(doc(db, "finanzas_meses", mesActivo.mes), mesActivo);
+        mostrarMensajeCentro('exito', 'Inyección Listada', 'Los gastos fijos fueron incorporados al mes activo.');
     }
-
-    function salirModoHistorico() {
-        document.getElementById('ahorroCasa').value = "0"; document.getElementById('sueldoItho').value = "0"; document.getElementById('sueldoNatty').value = "0";
-        document.getElementById('dashboard').style.display = 'none'; document.getElementById('badgeModo').style.display = 'none'; document.getElementById('bloqueBotonesHistoricos').style.display = 'none';
-        document.getElementById('btnSincronizar').style.display = 'inline-flex'; document.getElementById('mes').value = new Date().toISOString().slice(0, 7);
-        esModoHistorico = false; bloquearControlesUI(false);
-    }
-
-    function refrescarDashboard() {
-        document.getElementById('dIngresos').innerText = "$" + Math.round(mesActivo.ingresos || 0).toLocaleString('de-DE');
-        document.getElementById('dAhorro').innerText = "$" + Math.round(mesActivo.ahorroCasa || 0).toLocaleString('de-DE');
-        document.getElementById('dGastado').innerText = "$" + Math.round(mesActivo.totalGastado || 0).toLocaleString('de-DE');
-        const dispEl = document.getElementById('dDisponible'); dispEl.innerText = "$" + Math.round(mesActivo.disponible || 0).toLocaleString('de-DE');
-        dispEl.style.color = mesActivo.disponible < 0 ? 'var(--neon-rojo)' : 'var(--neon-verde)';
-    }
-
-    function renderizarGastos(gastosAFiltrar = null) {
-        const contenedor = document.getElementById('contenedorGastos'); contenedor.innerHTML = "";
-        const lista = gastosAFiltrar || mesActivo.gastos || [];
-        if(lista.length === 0) { contenedor.innerHTML = `<p style="text-align:center; color:var(--texto-secundario); font-size:13px; padding:20px 0;">Sin egresos registrados.</p>`; return; }
-        const ocultarBotonesEdicion = (esModoHistorico && document.getElementById('btnHabilitarEdicion').style.display !== 'none');
-        lista.forEach(g => {
-            const botonFoto = g.img 
-                ? `<button class="btn-icon btn-view-img" onclick="verComprobante('${g.id}')"><i class="fa-solid fa-image"></i></button>` 
-                : (!ocultarBotonesEdicion ? `<button class="btn-icon btn-add-img" onclick="solicitarFotoDirecta('${g.id}')"><i class="fa-solid fa-camera"></i></button>` : '');
-            contenedor.innerHTML += `
-                <div class="gasto-row">
-                    <div class="gasto-info">
-                        <div class="gasto-title">${g.desc}</div>
-                        <div class="gasto-cat">${g.cat}</div>
-                    </div>
-                    <div class="gasto-acciones">
-                        <span class="gasto-monto">-$${g.monto.toLocaleString('de-DE')}</span>
-                        ${botonFoto}
-                        ${!ocultarBotonesEdicion ? `
-                            <button class="btn-icon btn-edit" onclick="editarGasto(${g.id})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-icon btn-delete" onclick="eliminarGasto(${g.id})"><i class="fa-solid fa-trash-can"></i></button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    window.filtrarGastos = function() {
-        const query = document.getElementById('buscador').value.toLowerCase();
-        const lista = mesActivo.gastos || [];
-        const filtrados = lista.filter(g => g.desc.toLowerCase().includes(query) || g.cat.toLowerCase().includes(query));
-        renderizarGastos(filtrados);
-    }
-
-    function formatearInputMoneda(input) {
-        let valor = input.value.replace(/\D/g, ""); if(valor === "") valor = "0";
-        input.value = Number(valor).toLocaleString('de-DE');
-    }
-    window.formatearInputMoneda = formatearInputMoneda;
-    function limpiarFormateo(str) { return parseFloat(str.replace(/\./g, "")) || 0; }
-
-    function procesarFoto(input) {
-        const file = input.files[0];
-        if (file) {
-            document.getElementById('fileName').innerText = "Cargada ✓";
-            const reader = new FileReader(); reader.onloadend = function() { base64GastoImg = reader.result; }; reader.readAsDataURL(file);
-        }
-    }
-    window.procesarFoto = procesarFoto;
-
-    function verComprobante(idGasto) {
-        const g = mesActivo.gastos.find(g => g.id == idGasto);
-        if(g && g.img) { document.getElementById('modalImg').src = g.img; document.getElementById('imageModal').style.display = 'flex'; }
-    }
-    window.cerrarModal = function() { document.getElementById('imageModal').style.display = 'none'; };
 </script>
+
 </body>
 </html>
